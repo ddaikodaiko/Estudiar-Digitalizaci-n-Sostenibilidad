@@ -2,7 +2,15 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12141a" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tests">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>Tests de repaso · DAM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -10,8 +18,9 @@
 :root{--bg:#f3f1ec;--card:#fffdf9;--ink:#1d2330;--mute:#6a7080;--line:#dcd8cf;--acc:#2b4fd8;--acc-ink:#fff;--ok:#1f7a45;--ok-bg:#dff1e6;--bad:#b23a2a;--bad-bg:#f8e1dc;--warn:#a86a00}
 @media (prefers-color-scheme:dark){:root{--bg:#12141a;--card:#1b1e26;--ink:#e9eaee;--mute:#9298a6;--line:#2e323d;--acc:#7d97ff;--acc-ink:#0f1220;--ok:#6fd29a;--ok-bg:#183326;--bad:#f08b7b;--bad-bg:#3a1f1b;--warn:#f0b54a}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif}
-.wrap{max-width:760px;margin:0 auto;padding:28px 18px 70px}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;background:var(--bg);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:calc(28px + env(safe-area-inset-top)) calc(18px + env(safe-area-inset-right)) calc(70px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left))}
 header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:22px;flex-wrap:wrap}
 h1{font-family:Fraunces,serif;font-weight:600;font-size:30px;margin:0;letter-spacing:-.01em}
 h2{font-size:15px;margin:0 0 12px;font-weight:600}
@@ -55,13 +64,39 @@ h2{font-size:15px;margin:0 0 12px;font-weight:600}
 details{font-size:14px;color:var(--mute)}
 details summary{cursor:pointer;color:var(--ink);font-weight:500}
 details p{margin:8px 0}
-svg.chart{width:100%;height:150px;display:block}
+svg.chart{width:100%;height:auto;display:block}
 .chart-axis{stroke:var(--line)}
 .chart-line{fill:none;stroke:var(--acc);stroke-width:2}
 .chart-dot{fill:var(--acc)}
 .chart-goal{stroke:var(--ok);stroke-dasharray:4 4}
 .chart-label{fill:var(--mute);font-size:10px;font-family:Inter,sans-serif}
 .foot{margin-top:24px;font-size:12px;color:var(--mute);text-align:center}
+@media (hover:none){.hint{display:none}.opt:hover:not(:disabled){border-color:var(--line)}}
+@media (max-width:600px){
+  .wrap{padding-top:calc(16px + env(safe-area-inset-top))}
+  header{margin-bottom:14px}
+  h1{font-size:24px}
+  .card{padding:16px;border-radius:12px}
+  .stats{grid-template-columns:repeat(3,1fr);gap:8px}
+  .stat{padding:10px}
+  .stat strong{font-size:22px}
+  .stat small,.stat em{font-size:11px}
+  .units div{grid-template-columns:1fr 44px;row-gap:4px}
+  .units div .mini{grid-column:1 / -1;grid-row:2}
+  .units div span:last-child{grid-row:1;grid-column:2}
+  .seg{width:100%}.seg button{flex:1;padding:10px 6px}
+  #modes{display:flex}
+  .row .chip{padding:9px 14px}
+  .q{font-size:18px}
+  .opt{padding:14px;min-height:52px}
+  body.quiz header,body.quiz .foot{display:none}
+  body.quiz .wrap{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+  body.quiz .nav{position:fixed;left:0;right:0;bottom:0;z-index:5;background:var(--card);border-top:1px solid var(--line);
+    padding:10px calc(14px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));gap:8px}
+  body.quiz .nav .btn{flex:1;padding:14px 8px}
+  body.quiz .nav #next{flex:2}
+  .btn{min-height:46px}
+}
 </style>
 </head>
 <body>
@@ -162,10 +197,10 @@ function renderHeader(){
 
 function chart(st){
   const s=st.sessions; if(s.length<1) return '';
-  const W=600,H=150,P=24, xs=s.map(x=>x.tCum/3600), maxX=Math.max(xs[xs.length-1],0.01);
+  const W=Math.min(600,Math.max(300,app.clientWidth-40)),H=W<400?170:150,P=24, xs=s.map(x=>x.tCum/3600), maxX=Math.max(xs[xs.length-1],0.01);
   const X=v=>P+(W-2*P)*v/maxX, Y=v=>H-P-(H-2*P)*v/10;
   const pts=s.map((x,i)=>[X(xs[i]),Y(10*(1-x.err))]);
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}">
     <line class="chart-axis" x1="${P}" y1="${Y(0)}" x2="${W-P}" y2="${Y(0)}"/>
     <line class="chart-goal" x1="${P}" y1="${Y(TARGET)}" x2="${W-P}" y2="${Y(TARGET)}"/>
     <text class="chart-label" x="${W-P}" y="${Y(TARGET)-4}" text-anchor="end">objetivo ${TARGET}</text>
@@ -177,6 +212,7 @@ function chart(st){
 }
 
 function renderHome(){
+  document.body.classList.remove('quiz');
   renderHeader();
   const U=units(); if(!sel) sel=new Set(U);
   const qs=subj.qs, pr=projection(store,qs), prior=firstTryRate(store);
@@ -205,7 +241,7 @@ function renderHome(){
     <div style="margin:14px 0 4px" class="seg" id="modes">
       <button data-m="all" class="${mode==='all'?'on':''}">Todas</button>
       <button data-m="weak" class="${mode==='weak'?'on':''}">Flojas (${weakN})</button>
-      <button data-m="new" class="${mode==='new'?'on':''}">No vistas (${newN})</button>
+      <button data-m="new" class="${mode==='new'?'on':''}">Nuevas (${newN})</button>
     </div>
     <p class="sub">${pool.length} preguntas · orden y respuestas mezclados en cada repetición · ≈ ${fmtH(pool.length*pr.spq/3600)}</p>
     <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
@@ -242,6 +278,7 @@ function start(list){
   window.scrollTo(0,0);renderQ();
 }
 function renderQ(){
+  document.body.classList.add('quiz');
   const {qs,i,ans}=run,q=qs[i],a=ans[i];
   const done=ans.filter(x=>x!==null).length,ok=ans.filter((x,k)=>x===qs[k].c).length;
   app.innerHTML=`<div class="card">
@@ -253,12 +290,12 @@ function renderQ(){
     <div class="fb ${a===null?'':(a===q.c?'ok':'bad')}">${a===null?'':(a===q.c?'¡Correcta!':'Fallo. La buena era la '+L[q.c]+'.')}</div>
     <div class="nav">
       <button class="btn ghost" id="prev" ${i===0?'disabled':''}>Anterior</button>
-      <button class="btn ghost" id="end">Terminar</button>
+      <button class="btn ghost" id="end">Salir</button>
       <button class="btn" id="next" ${a===null?'disabled':''}>${i===qs.length-1?'Ver resultado':'Siguiente'}</button>
     </div>
     <div class="hint">A–D o 1–4 para responder · Enter o → para seguir</div>
   </div>`;
-  if(a===null) run.t0=performance.now();
+  if(a===null){run.t0=performance.now();window.scrollTo(0,0)}
   app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>answer(+b.dataset.k));
   app.querySelector('#prev').onclick=()=>{run.i--;renderQ()};
   app.querySelector('#next').onclick=next;
@@ -276,6 +313,7 @@ function answer(k){
 function next(){if(run.ans[run.i]===null)return;if(run.i<run.qs.length-1){run.i++;renderQ()}else finish()}
 
 function finish(){
+  document.body.classList.remove('quiz');
   const {qs,ans}=run;
   const answered=ans.filter(x=>x!==null).length;
   if(answered&&!run.saved){
